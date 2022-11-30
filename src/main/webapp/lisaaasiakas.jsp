@@ -5,10 +5,11 @@
 <head>
 <meta charset="ISO-8859-1">
 <script src="scripts/main.js"></script>
+<script src="scripts/io.js"></script>
 <link rel="stylesheet" type="text/css" href="css/main.css">
 <title>Asiakkaan lisäys</title>
 </head>
-<body>
+<body onload="asetaFocus('etunimi')" onkeydown="tutkiKey(event, 'lisaa')">
 <form name="lomake">
 	<table>
 		<thead>	

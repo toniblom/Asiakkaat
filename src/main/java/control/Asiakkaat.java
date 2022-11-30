@@ -30,6 +30,7 @@ public class Asiakkaat extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		System.out.println("Asiakkaat.doGet()");
 		String hakusana = request.getParameter("hakusana");
+		String asiakas_id = request.getParameter("asiakas_id");
 		Dao dao = new Dao();
 		ArrayList<Asiakas> asiakkaat;
 		String strJSON="";		
@@ -40,7 +41,10 @@ public class Asiakkaat extends HttpServlet {
 				asiakkaat = dao.getAllItems(); //Haetaan kaikki asiakkaat
 			}
 			strJSON = new Gson().toJson(asiakkaat);	// muutetaan asiakkaat arraylist JSON-stringiksi
-		}		
+		}else if(asiakas_id!=null) {
+			Asiakas asiakas = dao.getItem(Integer.parseInt(asiakas_id));
+			strJSON = new Gson().toJson(asiakas);
+		}
 		response.setContentType("application/json; charset=UTF-8"); // kirjoitetaan JSON backendin rajapintaan
 		PrintWriter out = response.getWriter();
 		out.println(strJSON);
@@ -66,6 +70,19 @@ public class Asiakkaat extends HttpServlet {
 	
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		System.out.println("Asiakkaat.doPut()");	
+		//Luetaan JSON-tiedot PUT-pyynn�n bodysta ja luodaan niiden perusteella uusi auto
+		String strJSONInput = request.getReader().lines().collect(Collectors.joining());
+		//System.out.println("strJSONInput " + strJSONInput);		
+		Asiakas asiakas = new Gson().fromJson(strJSONInput, Asiakas.class);		
+		//System.out.println(auto);		
+		response.setContentType("application/json; charset=UTF-8");
+		PrintWriter out = response.getWriter();
+		Dao dao = new Dao();			
+		if(dao.changeItem(asiakas)){ //metodi palauttaa true/false
+			out.println("{\"response\":1}");  //muuttaminen onnistui {"response":1}
+		}else{
+			out.println("{\"response\":0}");  //muuttaminen ep�onnistui {"response":0}
+		}		
 	}
 
 	
@@ -77,7 +94,7 @@ public class Asiakkaat extends HttpServlet {
 		Dao dao = new Dao();
 		response.setContentType("application/json; charset=UTF-8");
 		PrintWriter out = response.getWriter();
-		if(dao.removeItem(asiakas_id)) {
+		if(dao.removeItem(asiakas_id)) { // metodi palauttaa true tai false
 			out.println("{\"response\":1}");
 		}else {
 			out.println("{\"response\":0}");
