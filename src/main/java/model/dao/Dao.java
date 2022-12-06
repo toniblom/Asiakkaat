@@ -1,5 +1,9 @@
 package model.dao;
 
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -20,6 +24,7 @@ public class Dao {
 		Connection con = null;
 		String path = System.getProperty("catalina.base");
 		path = path.substring(0, path.indexOf(".metadata")).replace("\\", "/"); // Eclipsessa
+		//path =  new File(System.getProperty("user.dir")).getParentFile().toString() +"\\"; //Testauksessa
 		//System.out.println(path); //TÃ¤stÃ¤ nÃ¤et mihin kansioon laitat tietokanta-tiedostosi
 		// path += "/webapps/"; //Tuotannossa. Laita tietokanta webapps-kansioon
 		String url = "jdbc:sqlite:" + path + db;
@@ -34,7 +39,7 @@ public class Dao {
 		return con;
 	}
 
-	private void sulje() {		
+	private void sulje() {		// kaikki nimet englanniksi tai suomeksi yleensä
 		if (stmtPrep != null) {
 			try {
 				stmtPrep.close();
@@ -122,7 +127,7 @@ public class Dao {
 	
 	public boolean addItem(Asiakas asiakas) {
 		boolean paluuArvo = true;
-		sql = "INSERT INTO asiakkaat(etunimi, sukunimi, puhelin, sposti)VALUES(?,?,?,?)"; // id:tä ei anneta, koska se on autoincrement
+		sql = "INSERT INTO asiakkaat(etunimi, sukunimi, puhelin, sposti, salasana)VALUES(?,?,?,?,?)"; // id:tä ei anneta, koska se on autoincrement
 		try {
 			con = yhdista();
 			stmtPrep = con.prepareStatement(sql); // huolehtii melko hyvin siitä ettei SQL-injektiota voi tapahtua
@@ -130,6 +135,7 @@ public class Dao {
 			stmtPrep.setString(2, asiakas.getSukunimi());
 			stmtPrep.setString(3, asiakas.getPuhelin());
 			stmtPrep.setString(4, asiakas.getSposti());
+			stmtPrep.setString(5, sha256(asiakas.getSposti()));
 			stmtPrep.executeUpdate();
 			//System.out.println("Uusin id on " + stmtPrep.getGeneratedKeys().getInt(1));
 		} catch (Exception e) {
@@ -144,7 +150,6 @@ public class Dao {
 	public boolean removeItem(int asiakas_id) { // Oikeassa elämässä tiedot ensisijaisesti merkitään poistetuksi, ei siis poisteta
 		boolean paluuArvo = true;
 		sql = "DELETE FROM asiakkaat WHERE asiakas_id=?";
-		
 		try {
 			con = yhdista();
 			stmtPrep = con.prepareStatement(sql);
@@ -169,7 +174,7 @@ public class Dao {
 				stmtPrep.setInt(1, asiakas_id);
         		rs = stmtPrep.executeQuery();  
         		if(rs.isBeforeFirst()){ //jos kysely tuotti dataa, eli rekNo on k�yt�ss�
-        			rs.next();
+        			rs.next(); // siirrytään seuraavalle riville
         			asiakas = new Asiakas();
         			asiakas.setAsiakas_id(rs.getInt(1));
         			asiakas.setEtunimi(rs.getString(2));
@@ -188,7 +193,7 @@ public class Dao {
 	
 	public boolean changeItem(Asiakas asiakas){
 		boolean paluuArvo=true;
-		sql="UPDATE asiakkaat SET etunimi=?, sukunimi=?, puhelin=?, sposti=? WHERE asiakas_id=?";					  
+		sql="UPDATE asiakkaat SET etunimi=?, sukunimi=?, puhelin=?, sposti=?, salasana=? WHERE asiakas_id=?";					  
 		try {
 			con = yhdista();
 			stmtPrep=con.prepareStatement(sql); 
@@ -196,7 +201,8 @@ public class Dao {
 			stmtPrep.setString(2, asiakas.getSukunimi());
 			stmtPrep.setString(3, asiakas.getPuhelin());
 			stmtPrep.setString(4, asiakas.getSposti());
-			stmtPrep.setInt(5, asiakas.getAsiakas_id());
+			stmtPrep.setString(5, sha256(asiakas.getSposti()));
+			stmtPrep.setInt(6, asiakas.getAsiakas_id());
 			stmtPrep.executeUpdate();	        
 		} catch (Exception e) {				
 			e.printStackTrace();
@@ -207,4 +213,60 @@ public class Dao {
 		return paluuArvo;
 	}
 	
+	public boolean removeAllItems(String pwd){
+		boolean paluuArvo=true;
+		if(!pwd.equals("Nimda")) { //"Kovakoodattu" salasana -ei ole hyv� idea!
+			return false;
+		}
+		sql="DELETE FROM Asiakkaat";						  
+		try {
+			con = yhdista();
+			stmtPrep=con.prepareStatement(sql); 			
+			stmtPrep.executeUpdate();	        
+		} catch (Exception e) {				
+			e.printStackTrace();
+			paluuArvo=false;
+		} finally {
+			sulje();
+		}				
+		return paluuArvo;
+	}
+	
+	public String findUser(String uid, String pwd) {
+		String nimi = null;
+		sql="SELECT * FROM asiakkaat WHERE sposti=? AND salasana=?";						  
+		try {
+			con = yhdista();
+			if(con!=null){ 
+				stmtPrep = con.prepareStatement(sql); 
+				stmtPrep.setString(1, uid);
+				stmtPrep.setString(2, pwd);
+        		rs = stmtPrep.executeQuery();  
+        		if(rs.isBeforeFirst()){ //jos kysely tuotti dataa, eli asiakas l�ytyi
+        			rs.next();
+        			nimi = rs.getString("etunimi")+ " " +rs.getString("sukunimi");     			      			
+				}        		
+			}			        
+		} catch (Exception e) {				
+			e.printStackTrace();			
+		} finally {
+			sulje();
+		}				
+		return nimi;
+	}
+	
+	public String sha256(String sposti) throws NoSuchAlgorithmException {
+		MessageDigest md = MessageDigest.getInstance("SHA-256");
+		String text = "nimda" + sposti;
+
+	    // Change this to UTF-16 if needed
+	    md.update(text.getBytes(StandardCharsets.UTF_8));
+	    byte[] digest = md.digest();
+
+	    String hex = String.format("%064x", new BigInteger(1, digest));
+	    return hex;
+	}
+	
 }
+
+

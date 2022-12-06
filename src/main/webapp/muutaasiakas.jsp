@@ -1,3 +1,4 @@
+<%@include file="header.jsp" %>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
 <!DOCTYPE html>
@@ -36,6 +37,7 @@
 			</tbody>
 		</table>
 		<input type="hidden" name="asiakas_id" id="asiakas_id">
+		<!-- hidden kenttä tarvitaan id:n kantamiseen -->
 	</form>
 	<span id="ilmo"></span>
 </body>

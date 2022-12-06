@@ -3,7 +3,7 @@ function haeAsiakkaat() {
 	let url = "asiakkaat?hakusana=" + document.getElementById("hakusana").value; // kutsutaan servletin endpointia
 	let requestOptions = {
         method: "GET",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }       
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" }       
     };    
     fetch(url, requestOptions)
     .then(response => response.json())//Muutetaan vastausteksti JSON-objektiksi 

@@ -5,6 +5,7 @@ function serialize_form(form){
 	        );	
 }
 
+
 //funktio arvon lukemiseen urlista avaimen perusteella
 function requestURLParam(sParam){
     let sPageURL = window.location.search.substring(1);
@@ -24,12 +25,13 @@ function tutkiJaLisaa(){
 	}
 }
 
-//Tutkitaan lisättävät tiedot ennen niiden lähettämistä backendiin
+//Tutkitaan päivitettävät tiedot ennen niiden lähettämistä backendiin
 function tutkiJaPaivita(){
 	if(tutkiTiedot()){
 		paivitaTiedot();
 	}
 }
+
 
 function tutkiTiedot(){
 	let ilmo="";	
@@ -47,7 +49,6 @@ function tutkiTiedot(){
 		ilmo="Sähköposti ei kelpaa!";	
 		document.getElementById("sposti").focus();	
 	}
-	
 	if(ilmo!=""){
 		document.getElementById("ilmo").innerHTML=ilmo;
 		setTimeout(function(){ document.getElementById("ilmo").innerHTML=""; }, 3000); // 3 sekunnin refresh
@@ -61,6 +62,10 @@ function tutkiTiedot(){
 	}
 }
 
+
+
+
+
 function siivoa(teksti){
 	teksti=teksti.replace(/</g, "");//&lt;
 	teksti=teksti.replace(/>/g, "");//&gt;	
@@ -68,8 +73,6 @@ function siivoa(teksti){
 	teksti=teksti.replace(/'/g, "''");//&apos;
 	return teksti;
 }
-
-
 function varmistaPoisto(asiakas_id, etunimi, sukunimi){
 	console.log("Toimii");
 	if(confirm("Poista asiakas " + decodeURI(etunimi) + " " + decodeURI(sukunimi) +"?")){ //decodeURI() muutetaan enkoodatut merkit takaisin normaaliksi kirjoitukseksi
